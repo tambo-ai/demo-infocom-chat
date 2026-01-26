@@ -1,0 +1,16 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "@tambo-ai/*"
+      tambo:
+        patterns:
+          - "@tambo-ai/*"
