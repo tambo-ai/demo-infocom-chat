@@ -43,6 +43,7 @@ function ChatInterface({ gameIntro, onScroll }: { gameIntro: string | null; onSc
   const { value, setValue, submit, isPending } = useTamboThreadInput();
   const messagesRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -57,6 +58,7 @@ function ChatInterface({ gameIntro, onScroll }: { gameIntro: string | null; onSc
     e.preventDefault();
     if (!value.trim() || isPending) return;
     await submit({ streamResponse: true });
+    inputRef.current?.focus();
   };
 
   const handleScroll = useCallback(() => {
@@ -100,6 +102,7 @@ function ChatInterface({ gameIntro, onScroll }: { gameIntro: string | null; onSc
 
       <form onSubmit={handleSubmit} className="input-form">
         <input
+          ref={inputRef}
           type="text"
           value={value}
           onChange={(e) => setValue(e.target.value)}
