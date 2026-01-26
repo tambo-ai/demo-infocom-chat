@@ -190,7 +190,7 @@ function App() {
               <GameLoader onScroll={handleScroll} />
             </main>
             <footer>
-              Built with ❤️ with <a href="https://tambo.ai" target="_blank" rel="noopener noreferrer">Tambo</a>
+              Built with ❤️ with <a href="https://tambo.co" target="_blank" rel="noopener noreferrer">Tambo</a>
             </footer>
           </div>
         </TamboThreadInputProvider>

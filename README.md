@@ -1,6 +1,6 @@
 # Infocom Chat
 
-Play classic Infocom text adventures using natural language, powered by [Tambo](https://tambo.ai).
+Play classic Infocom text adventures using natural language, powered by [Tambo](https://tambo.co).
 
 Instead of typing precise parser commands like `TAKE LAMP` or `GO NORTH`, just say what you want to do: "grab the lamp and head north." Tambo translates your natural language into game commands, making the experience feel like the game itself got smarter.
 
@@ -35,7 +35,7 @@ Set your Tambo API key in `.env`:
 VITE_TAMBO_API_KEY=your_api_key_here
 ```
 
-Get an API key at [tambo.ai](https://tambo.ai).
+Get an API key at [tambo.co](https://tambo.co).
 
 ## Adding Games
 
@@ -43,6 +43,6 @@ Place Z-machine game files (.z3, .z5, .z8) in the `public/` directory and update
 
 ## Built With
 
-- [Tambo](https://tambo.ai) - AI tool calling and natural language processing
+- [Tambo](https://tambo.co) - AI tool calling and natural language processing
 - [JSZM](https://github.com/AntoineSierra/jszm) - JavaScript Z-Machine interpreter
 - [Vite](https://vitejs.dev) + [React](https://react.dev) - Frontend framework
