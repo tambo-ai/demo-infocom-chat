@@ -216,3 +216,19 @@ main {
 .input-form button:hover:not(:disabled) {
   background: #22c55e;
 }
+
+footer {
+  text-align: center;
+  padding: 12px 0;
+  font-size: 0.75rem;
+  color: #666;
+}
+
+footer a {
+  color: #4ade80;
+  text-decoration: none;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
