@@ -5,6 +5,39 @@ interface InputNeededMarker {
   maxlen: number;
 }
 
+const SAVE_KEY_PREFIX = 'infocom-chat-save-';
+
+function getSaveKey(game: JSZM): string {
+  return `${SAVE_KEY_PREFIX}${game.serial}-${game.zorkid}`;
+}
+
+function saveToLocalStorage(game: JSZM, data: Uint8Array): boolean {
+  try {
+    const base64 = btoa(String.fromCharCode(...data));
+    localStorage.setItem(getSaveKey(game), base64);
+    return true;
+  } catch (err) {
+    console.error('[ZMachine] Failed to save:', err);
+    return false;
+  }
+}
+
+function loadFromLocalStorage(game: JSZM): Uint8Array | null {
+  try {
+    const base64 = localStorage.getItem(getSaveKey(game));
+    if (!base64) return null;
+    const binary = atob(base64);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+  } catch (err) {
+    console.error('[ZMachine] Failed to load save:', err);
+    return null;
+  }
+}
+
 export class ZMachineRunner {
   private game: JSZM;
   private gameGenerator: Generator | null = null;
@@ -28,22 +61,28 @@ export class ZMachineRunner {
       return input;
     };
 
-    // Save stub - will be implemented with localStorage
-    this.game.save = function* () {
-      console.log('[ZMachine] Save not yet implemented');
-      return false;
+    // Save to localStorage
+    this.game.save = function* (data: Uint8Array) {
+      return saveToLocalStorage(self.game, data);
     };
 
-    // Restore stub
+    // Restore from localStorage
     this.game.restore = function* () {
-      console.log('[ZMachine] Restore not yet implemented');
-      return null;
+      return loadFromLocalStorage(self.game);
     };
   }
 
   async start(): Promise<string> {
     this.gameGenerator = this.game.run() as Generator;
-    return this.runUntilInput();
+    const intro = this.runUntilInput();
+
+    // Auto-restore if a save exists
+    if (this.hasSavedGame()) {
+      const restoreOutput = await this.sendCommand('RESTORE');
+      return intro + '\n[Game restored from auto-save]\n\n' + restoreOutput;
+    }
+
+    return intro;
   }
 
   async sendCommand(command: string): Promise<string> {
@@ -57,6 +96,14 @@ export class ZMachineRunner {
     this.outputBuffer = '';
     const result = this.gameGenerator.next(command);
     return this.runUntilInputFromResult(result);
+  }
+
+  hasSavedGame(): boolean {
+    return localStorage.getItem(getSaveKey(this.game)) !== null;
+  }
+
+  clearSave(): void {
+    localStorage.removeItem(getSaveKey(this.game));
   }
 
   isWaitingForInput(): boolean {
