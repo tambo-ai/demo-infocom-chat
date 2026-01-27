@@ -131,13 +131,8 @@ function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps
         )}
         {thread.messages
           .filter((message) => message.role === 'user' || message.role === 'assistant')
-          .map((message, index, filtered) => {
-            // For user messages, check if the next message (assistant) has a command
-            const nextMessage = filtered[index + 1];
-            const commandAfterUser =
-              message.role === 'user' && nextMessage?.role === 'assistant'
-                ? extractGameCommand(nextMessage)
-                : null;
+          .map((message) => {
+            const command = message.role === 'assistant' ? extractGameCommand(message) : null;
 
             return (
               <div key={message.id} className="message-group">
@@ -152,10 +147,10 @@ function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps
                         : null}
                   </div>
                 </div>
-                {/* Show command after user message, before assistant response */}
-                {showCommands && commandAfterUser && (
+                {/* Show command after assistant response */}
+                {showCommands && command && (
                   <div className="message command">
-                    <div className="message-content">{commandAfterUser}</div>
+                    <div className="message-content">{command}</div>
                   </div>
                 )}
               </div>

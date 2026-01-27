@@ -51,8 +51,6 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
-  max-width: 800px;
-  margin: 0 auto;
 }
 
 main {
@@ -92,6 +90,9 @@ header {
   border-bottom: 1px solid var(--color-border);
   transition: padding var(--transition-normal);
   flex-shrink: 0;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 header.collapsed {
@@ -384,10 +385,18 @@ header.collapsed .info-button {
 }
 
 .message {
-  margin: 0 var(--spacing-xl) var(--spacing-lg);
+  max-width: 760px;
+  margin: 0 auto var(--spacing-lg);
   padding: 10px var(--spacing-lg);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
+}
+
+@media (max-width: 800px) {
+  .message {
+    margin-left: var(--spacing-xl);
+    margin-right: var(--spacing-xl);
+  }
 }
 
 @media (max-width: 600px) {
@@ -429,7 +438,15 @@ header.collapsed .info-button {
   border: 1px solid var(--color-border-intro);
   padding: var(--spacing-lg);
   border-radius: var(--radius-md);
-  margin: 0 var(--spacing-xl) var(--spacing-lg);
+  max-width: 760px;
+  margin: 0 auto var(--spacing-lg);
+}
+
+@media (max-width: 800px) {
+  .game-intro-message {
+    margin-left: var(--spacing-xl);
+    margin-right: var(--spacing-xl);
+  }
 }
 
 @media (max-width: 600px) {
@@ -456,6 +473,9 @@ header.collapsed .info-button {
   gap: 10px;
   padding: var(--spacing-lg) var(--spacing-xl);
   border-top: 1px solid var(--color-border);
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 @media (max-width: 600px) {
@@ -514,9 +534,12 @@ header.collapsed .info-button {
 
 footer {
   text-align: center;
-  padding: var(--spacing-md) 0;
+  padding: var(--spacing-md) var(--spacing-xl);
   font-size: 0.75rem;
   color: var(--color-text-dim);
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 footer a {
