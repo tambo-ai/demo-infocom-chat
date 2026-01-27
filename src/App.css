@@ -53,7 +53,6 @@
   height: 100vh;
   max-width: 800px;
   margin: 0 auto;
-  padding: 0 var(--spacing-xl) var(--spacing-xl);
 }
 
 main {
@@ -97,6 +96,15 @@ header {
 
 header.collapsed {
   padding: 6px var(--spacing-xl);
+}
+
+@media (max-width: 600px) {
+  header,
+  header.collapsed {
+    padding-left: var(--spacing-sm);
+    padding-right: var(--spacing-sm);
+    gap: var(--spacing-sm);
+  }
 }
 
 header h1 {
@@ -376,10 +384,17 @@ header.collapsed .info-button {
 }
 
 .message {
-  margin-bottom: var(--spacing-lg);
+  margin: 0 var(--spacing-xl) var(--spacing-lg);
   padding: 10px var(--spacing-lg);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
+}
+
+@media (max-width: 600px) {
+  .message {
+    margin-left: var(--spacing-md);
+    margin-right: var(--spacing-md);
+  }
 }
 
 .message.user {
@@ -414,7 +429,14 @@ header.collapsed .info-button {
   border: 1px solid var(--color-border-intro);
   padding: var(--spacing-lg);
   border-radius: var(--radius-md);
-  margin-bottom: var(--spacing-lg);
+  margin: 0 var(--spacing-xl) var(--spacing-lg);
+}
+
+@media (max-width: 600px) {
+  .game-intro-message {
+    margin-left: var(--spacing-md);
+    margin-right: var(--spacing-md);
+  }
 }
 
 .game-intro-message pre {
@@ -432,8 +454,15 @@ header.collapsed .info-button {
 .input-form {
   display: flex;
   gap: 10px;
-  padding: var(--spacing-lg) 0;
+  padding: var(--spacing-lg) var(--spacing-xl);
   border-top: 1px solid var(--color-border);
+}
+
+@media (max-width: 600px) {
+  .input-form {
+    padding-left: var(--spacing-md);
+    padding-right: var(--spacing-md);
+  }
 }
 
 .input-form input {
