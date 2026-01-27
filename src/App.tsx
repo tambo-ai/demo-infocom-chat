@@ -50,6 +50,13 @@ function ChatInterface({ gameIntro, onScroll }: { gameIntro: string | null; onSc
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [thread.messages, isPending]);
 
+  // Refocus input when no longer pending
+  useEffect(() => {
+    if (!isPending) {
+      inputRef.current?.focus();
+    }
+  }, [isPending]);
+
   // Show thinking indicator only before assistant starts responding
   const lastMessage = thread.messages[thread.messages.length - 1];
   const showThinking = isPending && lastMessage?.role !== 'assistant';
@@ -57,8 +64,7 @@ function ChatInterface({ gameIntro, onScroll }: { gameIntro: string | null; onSc
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!value.trim() || isPending) return;
-    await submit({ streamResponse: true });
-    inputRef.current?.focus();
+    submit({ streamResponse: true });
   };
 
   const handleScroll = useCallback(() => {
