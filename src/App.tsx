@@ -45,28 +45,27 @@ interface ChatInterfaceProps {
   showCommands: boolean;
 }
 
-// Extract sendGameCommand calls from message content
-function extractGameCommands(content: unknown): string[] {
-  if (!Array.isArray(content)) return [];
-  const commands: string[] = [];
-  for (const part of content) {
-    if (
-      typeof part === 'object' &&
-      part !== null &&
-      'type' in part &&
-      part.type === 'tool_use' &&
-      'name' in part &&
-      part.name === 'sendGameCommand' &&
-      'input' in part &&
-      typeof part.input === 'object' &&
-      part.input !== null &&
-      'command' in part.input &&
-      typeof part.input.command === 'string'
-    ) {
-      commands.push(part.input.command);
+// Extract sendGameCommand calls from message toolCallRequest
+function extractGameCommand(message: unknown): string | null {
+  if (
+    typeof message === 'object' &&
+    message !== null &&
+    'toolCallRequest' in message &&
+    typeof message.toolCallRequest === 'object' &&
+    message.toolCallRequest !== null
+  ) {
+    const request = message.toolCallRequest as {
+      toolName?: string;
+      parameters?: Array<{ parameterName?: string; parameterValue?: string }>;
+    };
+    if (request.toolName === 'sendGameCommand' && Array.isArray(request.parameters)) {
+      const commandParam = request.parameters.find(p => p.parameterName === 'command');
+      if (commandParam?.parameterValue) {
+        return commandParam.parameterValue;
+      }
     }
   }
-  return commands;
+  return null;
 }
 
 function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps) {
@@ -133,17 +132,13 @@ function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps
         {thread.messages
           .filter((message) => message.role === 'user' || message.role === 'assistant')
           .map((message) => {
-            const commands = message.role === 'assistant' ? extractGameCommands(message.content) : [];
+            const command = message.role === 'assistant' ? extractGameCommand(message) : null;
             return (
               <div key={message.id} className="message-group">
-                {/* Show commands before assistant response if toggle is on */}
-                {showCommands && commands.length > 0 && (
+                {/* Show command before assistant response if toggle is on */}
+                {showCommands && command && (
                   <div className="message command">
-                    <div className="message-content">
-                      {commands.map((cmd, i) => (
-                        <div key={i}>{cmd}</div>
-                      ))}
-                    </div>
+                    <div className="message-content">{command}</div>
                   </div>
                 )}
                 <div className={`message ${message.role}`}>
