@@ -34,6 +34,28 @@ interface ChatInterfaceProps {
   showCommands: boolean;
 }
 
+function TipsBanner({ collapsed }: { collapsed: boolean }) {
+  return (
+    <div className={`tips-banner ${collapsed ? 'collapsed' : ''}`}>
+      <div className="tips-banner-content">
+        <div className="tips-banner-header">
+          <span className="tips-banner-icon">&#x2728;</span>
+          <span className="tips-banner-title">Try Natural Language</span>
+        </div>
+        <p className="tips-banner-description">
+          You can speak to the game like a person, not a parser. Try complex commands like:
+        </p>
+        <ul className="tips-banner-examples">
+          <li>"Open the mailbox and read whatever's inside"</li>
+          <li>"Go inside the house and look around for anything valuable"</li>
+          <li>"Take the sword, then go down to the cellar"</li>
+          <li>"Put all my treasures in the trophy case"</li>
+        </ul>
+      </div>
+    </div>
+  );
+}
+
 // Extract sendGameCommand calls from message toolCallRequest
 function extractGameCommand(message: unknown): string | null {
   if (
@@ -63,6 +85,7 @@ function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps
   const messagesRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const [tipsBannerCollapsed, setTipsBannerCollapsed] = useState(false);
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -83,6 +106,9 @@ function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!value.trim() || isPending) return;
+    if (!tipsBannerCollapsed) {
+      setTipsBannerCollapsed(true);
+    }
     submit({ streamResponse: true });
   };
 
@@ -100,6 +126,7 @@ function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps
             <pre>{gameIntro}</pre>
           </div>
         )}
+        <TipsBanner collapsed={tipsBannerCollapsed} />
         {thread.messages
           .filter((message) => message.role === 'user' || message.role === 'assistant')
           .map((message) => {
