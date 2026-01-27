@@ -421,7 +421,7 @@ function App() {
         )}
       </main>
       <footer>
-        Built with ❤️ with <a href="https://tambo.co" target="_blank" rel="noopener noreferrer">Tambo</a>
+        Built with ❤️ with <a href="https://tambo.co" target="_blank" rel="noopener noreferrer">Tambo</a> | <a href="https://github.com/tambo-ai/demo-infocom-chat" target="_blank" rel="noopener noreferrer">GitHub</a>
       </footer>
       {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
     </div>
