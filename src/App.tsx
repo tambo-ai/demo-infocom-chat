@@ -180,7 +180,7 @@ function InfoModal({ onClose }: { onClose: () => void }) {
           <h3>Z-Machine Engine</h3>
           <p>
             The game runs entirely in your browser using{' '}
-            <a href="https://github.com/AnotherDole/jszm" target="_blank" rel="noopener noreferrer">
+            <a href="https://github.com/DLehenbauer/jszm" target="_blank" rel="noopener noreferrer">
               JSZM
             </a>
             , a JavaScript implementation of the Z-machine virtual machine that Infocom
@@ -288,8 +288,17 @@ function GameLoader({ game, onScroll, onChangeGame, showCommands }: GameLoaderPr
   return <ChatInterface gameIntro={gameOutput} onScroll={onScroll} showCommands={showCommands} />;
 }
 
-function App() {
+// Helper to reset thread - Tambo accepts undefined to create a new thread
+// but the types don't reflect this, so we centralize the cast here
+function useResetThread() {
   const { switchCurrentThread } = useTamboThread();
+  return useCallback(() => {
+    switchCurrentThread(undefined as unknown as string);
+  }, [switchCurrentThread]);
+}
+
+function App() {
+  const resetThread = useResetThread();
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [showCommands, setShowCommands] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
@@ -322,7 +331,8 @@ function App() {
     if (selectedGame && window.location.pathname !== `/${selectedGame.id}`) {
       window.history.replaceState({}, '', `/${selectedGame.id}`);
     }
-  }, []); // Only run once on mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally run only on mount
+  }, []);
 
   // Handle browser back/forward navigation
   useEffect(() => {
@@ -333,19 +343,19 @@ function App() {
         if (game) {
           resetGame();
           setSelectedGame(game);
-          switchCurrentThread(undefined as unknown as string);
+          resetThread();
           return;
         }
       }
       // No valid game in URL, go to selector
       resetGame();
       setSelectedGame(null);
-      switchCurrentThread(undefined as unknown as string);
+      resetThread();
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [switchCurrentThread]);
+  }, [resetThread]);
 
   const handleScroll = useCallback((scrollTop: number) => {
     setHeaderCollapsed(scrollTop > 50);
@@ -361,16 +371,16 @@ function App() {
   const handleChangeGame = useCallback(() => {
     resetGame();
     setSelectedGame(null);
-    switchCurrentThread(undefined as unknown as string);
+    resetThread();
     // Update URL back to root
     window.history.pushState({}, '', '/');
-  }, [switchCurrentThread]);
+  }, [resetThread]);
 
   const handleNewGame = useCallback(() => {
     if (confirm('Start a new game? Your progress will be lost.')) {
       clearGameSave();
       resetGame();
-      switchCurrentThread(undefined as unknown as string);
+      resetThread();
       // If multiple games, go back to selector
       if (games.length > 1) {
         setSelectedGame(null);
@@ -378,7 +388,7 @@ function App() {
       }
       // Otherwise stay on current game with fresh thread
     }
-  }, [switchCurrentThread]);
+  }, [resetThread]);
 
   return (
     <div className="app">

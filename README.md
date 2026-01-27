@@ -39,10 +39,10 @@ Get an API key at [tambo.co](https://tambo.co).
 
 ## Adding Games
 
-Place Z-machine game files (.z3, .z5, .z8) in the `public/` directory and update the game path in `src/App.tsx`.
+Place Z-machine game files (.z3, .z5, .z8) in the `public/` directory and add an entry in `src/lib/games.ts`.
 
 ## Built With
 
 - [Tambo](https://tambo.co) - AI tool calling and natural language processing
-- [JSZM](https://github.com/AntoineSierra/jszm) - JavaScript Z-Machine interpreter
+- [JSZM](https://github.com/DLehenbauer/jszm) - JavaScript Z-Machine interpreter
 - [Vite](https://vitejs.dev) + [React](https://react.dev) - Frontend framework

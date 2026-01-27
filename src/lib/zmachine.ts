@@ -46,9 +46,11 @@ export class ZMachineRunner {
 
   constructor(storyData: ArrayBuffer) {
     this.game = new JSZM(new Uint8Array(storyData));
+    // eslint-disable-next-line @typescript-eslint/no-this-alias -- needed for generator function closures
     const self = this;
 
-    // Override print - accumulate output (generator that doesn't yield)
+    // Override print - accumulate output (JSZM requires generator even without yield)
+    // eslint-disable-next-line require-yield
     this.game.print = function* (text: string) {
       self.outputBuffer += text;
     };
@@ -61,12 +63,14 @@ export class ZMachineRunner {
       return input;
     };
 
-    // Save to localStorage
+    // Save to localStorage (JSZM requires generator even without yield)
+    // eslint-disable-next-line require-yield
     this.game.save = function* (data: Uint8Array) {
       return saveToLocalStorage(self.game, data);
     };
 
-    // Restore from localStorage
+    // Restore from localStorage (JSZM requires generator even without yield)
+    // eslint-disable-next-line require-yield
     this.game.restore = function* () {
       return loadFromLocalStorage(self.game);
     };
