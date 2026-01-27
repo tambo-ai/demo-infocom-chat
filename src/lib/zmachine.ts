@@ -78,14 +78,14 @@ export class ZMachineRunner {
 
     // Auto-restore if a save exists
     if (this.hasSavedGame()) {
-      const restoreOutput = await this.sendCommand('RESTORE');
+      const restoreOutput = await this.sendCommand('RESTORE', false);
       return intro + '\n[Game restored from auto-save]\n\n' + restoreOutput;
     }
 
     return intro;
   }
 
-  async sendCommand(command: string): Promise<string> {
+  async sendCommand(command: string, autoSave = true): Promise<string> {
     if (!this.gameGenerator) {
       throw new Error('Game not started');
     }
@@ -95,7 +95,16 @@ export class ZMachineRunner {
 
     this.outputBuffer = '';
     const result = this.gameGenerator.next(command);
-    return this.runUntilInputFromResult(result);
+    const output = this.runUntilInputFromResult(result);
+
+    // Auto-save after each command (silently)
+    if (autoSave && this.waitingForInput && command.toUpperCase() !== 'SAVE' && command.toUpperCase() !== 'RESTORE') {
+      this.outputBuffer = '';
+      const saveResult = this.gameGenerator.next('SAVE');
+      this.runUntilInputFromResult(saveResult);
+    }
+
+    return output;
   }
 
   hasSavedGame(): boolean {
