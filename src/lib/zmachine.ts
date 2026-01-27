@@ -166,3 +166,9 @@ export function getGameRunner(): ZMachineRunner | null {
 export function isGameInitialized(): boolean {
   return currentRunner !== null;
 }
+
+export function clearGameSave(): void {
+  if (currentRunner) {
+    currentRunner.clearSave();
+  }
+}

@@ -50,6 +50,28 @@ header p::before {
   color: #555;
 }
 
+.reset-button {
+  background: transparent;
+  border: 1px solid #444;
+  color: #888;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: auto;
+}
+
+.reset-button:hover {
+  border-color: #666;
+  color: #ccc;
+}
+
+header.collapsed .reset-button {
+  padding: 2px 8px;
+  font-size: 0.7rem;
+}
+
 main {
   flex: 1;
   display: flex;

@@ -8,7 +8,7 @@ import {
   type InitialTamboThreadMessage,
 } from '@tambo-ai/react';
 import { tools } from './lib/tambo';
-import { initializeGame, isGameInitialized } from './lib/zmachine';
+import { initializeGame, isGameInitialized, clearGameSave } from './lib/zmachine';
 import './App.css';
 
 const systemMessage: InitialTamboThreadMessage = {
@@ -194,6 +194,17 @@ function App() {
             <header className={headerCollapsed ? 'collapsed' : ''}>
               <h1>Infocom Chat</h1>
               <p>Play text adventures with natural language</p>
+              <button
+                className="reset-button"
+                onClick={() => {
+                  if (confirm('Start a new game? Your progress will be lost.')) {
+                    clearGameSave();
+                    window.location.reload();
+                  }
+                }}
+              >
+                New Game
+              </button>
             </header>
             <main>
               <GameLoader onScroll={handleScroll} />
