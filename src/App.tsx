@@ -288,17 +288,8 @@ function GameLoader({ game, onScroll, onChangeGame, showCommands }: GameLoaderPr
   return <ChatInterface gameIntro={gameOutput} onScroll={onScroll} showCommands={showCommands} />;
 }
 
-// Helper to reset thread - Tambo accepts undefined to create a new thread
-// but the types don't reflect this, so we centralize the cast here
-function useResetThread() {
-  const { switchCurrentThread } = useTamboThread();
-  return useCallback(() => {
-    switchCurrentThread(undefined as unknown as string);
-  }, [switchCurrentThread]);
-}
-
 function App() {
-  const resetThread = useResetThread();
+  const { startNewThread } = useTamboThread();
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [showCommands, setShowCommands] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
@@ -343,19 +334,19 @@ function App() {
         if (game) {
           resetGame();
           setSelectedGame(game);
-          resetThread();
+          startNewThread();
           return;
         }
       }
       // No valid game in URL, go to selector
       resetGame();
       setSelectedGame(null);
-      resetThread();
+      startNewThread();
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [resetThread]);
+  }, [startNewThread]);
 
   const handleScroll = useCallback((scrollTop: number) => {
     setHeaderCollapsed(scrollTop > 50);
@@ -371,16 +362,16 @@ function App() {
   const handleChangeGame = useCallback(() => {
     resetGame();
     setSelectedGame(null);
-    resetThread();
+    startNewThread();
     // Update URL back to root
     window.history.pushState({}, '', '/');
-  }, [resetThread]);
+  }, [startNewThread]);
 
   const handleNewGame = useCallback(() => {
     if (confirm('Start a new game? Your progress will be lost.')) {
       clearGameSave();
       resetGame();
-      resetThread();
+      startNewThread();
       // If multiple games, go back to selector
       if (games.length > 1) {
         setSelectedGame(null);
@@ -388,7 +379,7 @@ function App() {
       }
       // Otherwise stay on current game with fresh thread
     }
-  }, [resetThread]);
+  }, [startNewThread]);
 
   return (
     <div className="app">
