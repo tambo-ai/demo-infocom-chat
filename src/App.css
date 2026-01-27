@@ -1,111 +1,59 @@
+/* ==========================================================================
+   Design Tokens
+   ========================================================================== */
+
+:root {
+  /* Colors */
+  --color-accent: #4ade80;
+  --color-accent-hover: #22c55e;
+  --color-error: #ef4444;
+  --color-command: #8b8bcd;
+
+  --color-bg-dark: #1a1a1a;
+  --color-bg-card: #252525;
+  --color-bg-user: #1e3a2f;
+  --color-bg-intro: #1a2520;
+  --color-bg-command: #1a1a2e;
+
+  --color-border: #333;
+  --color-border-light: #444;
+  --color-border-user: #2d5a47;
+  --color-border-intro: #2d4a3f;
+  --color-border-command: #2d2d4a;
+
+  --color-text: #e0e0e0;
+  --color-text-muted: #888;
+  --color-text-dim: #666;
+  --color-text-faint: #555;
+  --color-text-secondary: #9ca3af;
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 12px;
+  --spacing-lg: 15px;
+  --spacing-xl: 20px;
+
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+
+  /* Transitions */
+  --transition-fast: 0.2s ease;
+  --transition-normal: 0.3s ease;
+}
+
+/* ==========================================================================
+   Base Layout
+   ========================================================================== */
+
 .app {
   display: flex;
   flex-direction: column;
   height: 100vh;
   max-width: 800px;
   margin: 0 auto;
-  padding: 0 20px 20px;
-}
-
-header {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 12px 20px;
-  border-bottom: 1px solid #333;
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-}
-
-header.collapsed {
-  padding: 6px 20px;
-}
-
-header h1 {
-  margin: 0;
-  color: #4ade80;
-  font-size: 1.25rem;
-  transition: font-size 0.3s ease;
-}
-
-header.collapsed h1 {
-  font-size: 1rem;
-}
-
-header p {
-  margin: 0;
-  color: #888;
-  font-size: 0.875rem;
-  transition: all 0.3s ease;
-}
-
-header.collapsed p {
-  font-size: 0.75rem;
-}
-
-header p::before {
-  content: "—";
-  margin-right: 12px;
-  color: #555;
-}
-
-.header-buttons {
-  display: flex;
-  gap: 8px;
-  margin-left: auto;
-}
-
-.toggle-button {
-  background: transparent;
-  border: 1px solid #444;
-  color: #666;
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.toggle-button:hover {
-  border-color: #666;
-  color: #888;
-}
-
-.toggle-button.active {
-  border-color: #4ade80;
-  color: #4ade80;
-}
-
-.toggle-icon {
-  font-family: monospace;
-  font-weight: bold;
-}
-
-header.collapsed .toggle-button {
-  padding: 2px 6px;
-  font-size: 0.7rem;
-}
-
-.reset-button {
-  background: transparent;
-  border: 1px solid #444;
-  color: #888;
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.reset-button:hover {
-  border-color: #666;
-  color: #ccc;
-}
-
-header.collapsed .reset-button {
-  padding: 2px 8px;
-  font-size: 0.7rem;
+  padding: 0 var(--spacing-xl) var(--spacing-xl);
 }
 
 main {
@@ -115,46 +63,145 @@ main {
   overflow: hidden;
 }
 
+/* ==========================================================================
+   Utility Patterns
+   ========================================================================== */
+
+/* Centered full-height container */
 .loading-screen,
-.error-screen {
+.error-screen,
+.game-selector {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   height: 100%;
   text-align: center;
+  padding: var(--spacing-xl);
 }
 
+/* ==========================================================================
+   Header
+   ========================================================================== */
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-md);
+  padding: var(--spacing-md) var(--spacing-xl);
+  border-bottom: 1px solid var(--color-border);
+  transition: padding var(--transition-normal);
+  flex-shrink: 0;
+}
+
+header.collapsed {
+  padding: 6px var(--spacing-xl);
+}
+
+header h1 {
+  margin: 0;
+  color: var(--color-accent);
+  font-size: 1.25rem;
+  transition: font-size var(--transition-normal);
+}
+
+header.collapsed h1 {
+  font-size: 1rem;
+}
+
+header p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  transition: font-size var(--transition-normal);
+}
+
+header.collapsed p {
+  font-size: 0.75rem;
+}
+
+header p::before {
+  content: "—";
+  margin-right: var(--spacing-md);
+  color: var(--color-text-faint);
+}
+
+/* Header Buttons */
+.header-buttons {
+  display: flex;
+  gap: var(--spacing-sm);
+  margin-left: auto;
+}
+
+.toggle-button,
+.reset-button {
+  background: transparent;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.toggle-button {
+  color: var(--color-text-dim);
+  padding: var(--spacing-xs) var(--spacing-sm);
+}
+
+.toggle-button:hover {
+  border-color: var(--color-text-dim);
+  color: var(--color-text-muted);
+}
+
+.toggle-button.active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+.toggle-icon {
+  font-family: monospace;
+  font-weight: bold;
+}
+
+.reset-button {
+  color: var(--color-text-muted);
+  padding: var(--spacing-xs) var(--spacing-md);
+}
+
+.reset-button:hover {
+  border-color: var(--color-text-dim);
+  color: var(--color-text);
+}
+
+header.collapsed .toggle-button,
+header.collapsed .reset-button {
+  padding: 2px 6px;
+  font-size: 0.7rem;
+}
+
+/* ==========================================================================
+   Error Screen
+   ========================================================================== */
+
 .error-screen h1 {
-  color: #ef4444;
+  color: var(--color-error);
 }
 
 .error-screen button {
-  margin-top: 20px;
-  padding: 10px 20px;
-  background: #4ade80;
-  color: #1a1a1a;
+  margin-top: var(--spacing-xl);
+  padding: 10px var(--spacing-xl);
+  background: var(--color-accent);
+  color: var(--color-bg-dark);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-family: inherit;
 }
 
-.game-intro-message {
-  background: #1a2520;
-  border: 1px solid #2d4a3f;
-  padding: 15px;
-  border-radius: 8px;
-  margin-bottom: 15px;
-}
-
-.game-intro-message pre {
-  margin: 0;
-  white-space: pre-wrap;
-  font-size: 0.875rem;
-  line-height: 1.6;
-  color: #9ca3af;
-}
+/* ==========================================================================
+   Chat Container
+   ========================================================================== */
 
 .chat-container {
   flex: 1;
@@ -163,48 +210,54 @@ main {
   overflow: hidden;
 }
 
+/* Messages Area */
 .messages {
   flex: 1;
   overflow-y: auto;
   padding: 10px 0;
-  /* Firefox scrollbar */
+  /* Firefox */
   scrollbar-width: thin;
-  scrollbar-color: #333 #1a1a1a;
+  scrollbar-color: var(--color-border) var(--color-bg-dark);
 }
 
-/* Webkit scrollbar styling (Chrome, Safari, Edge) */
+/* Webkit Scrollbar */
 .messages::-webkit-scrollbar {
   width: 8px;
 }
 
 .messages::-webkit-scrollbar-track {
-  background: #1a1a1a;
-  border-radius: 4px;
+  background: var(--color-bg-dark);
+  border-radius: var(--radius-sm);
 }
 
 .messages::-webkit-scrollbar-thumb {
-  background: #333;
-  border-radius: 4px;
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
 }
 
 .messages::-webkit-scrollbar-thumb:hover {
-  background: #4ade80;
+  background: var(--color-accent);
+}
+
+/* Message Styles */
+.message-group {
+  display: contents;
 }
 
 .message {
-  margin-bottom: 15px;
-  padding: 10px 15px;
-  border-radius: 8px;
+  margin-bottom: var(--spacing-lg);
+  padding: 10px var(--spacing-lg);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
 }
 
 .message.user {
-  background: #1e3a2f;
-  border: 1px solid #2d5a47;
+  background: var(--color-bg-user);
+  border-color: var(--color-border-user);
 }
 
 .message.assistant {
-  background: #252525;
-  border: 1px solid #333;
+  background: var(--color-bg-card);
 }
 
 .message.loading {
@@ -212,26 +265,11 @@ main {
 }
 
 .message.command {
-  background: #1a1a2e;
-  border: 1px solid #2d2d4a;
+  background: var(--color-bg-command);
+  border-color: var(--color-border-command);
   font-family: monospace;
   font-size: 0.875rem;
-  color: #8b8bcd;
-}
-
-.message-group {
-  display: contents;
-}
-
-.message-role {
-  font-size: 0.75rem;
-  color: #888;
-  margin-bottom: 5px;
-  text-transform: uppercase;
-}
-
-.message.user .message-role {
-  color: #4ade80;
+  color: var(--color-command);
 }
 
 .message-content {
@@ -239,43 +277,66 @@ main {
   line-height: 1.6;
 }
 
+/* Game Intro */
+.game-intro-message {
+  background: var(--color-bg-intro);
+  border: 1px solid var(--color-border-intro);
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.game-intro-message pre {
+  margin: 0;
+  white-space: pre-wrap;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+/* ==========================================================================
+   Input Form
+   ========================================================================== */
+
 .input-form {
   display: flex;
   gap: 10px;
-  padding: 15px 0;
-  border-top: 1px solid #333;
+  padding: var(--spacing-lg) 0;
+  border-top: 1px solid var(--color-border);
 }
 
 .input-form input {
   flex: 1;
-  padding: 12px 15px;
-  background: #252525;
-  border: 1px solid #333;
-  border-radius: 8px;
-  color: #e0e0e0;
+  padding: var(--spacing-md) var(--spacing-lg);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
   font-family: inherit;
   font-size: 1rem;
+  transition: border-color var(--transition-fast);
 }
 
 .input-form input:focus {
   outline: none;
-  border-color: #4ade80;
+  border-color: var(--color-accent);
 }
 
 .input-form input::placeholder {
-  color: #666;
+  color: var(--color-text-dim);
 }
 
 .input-form button {
-  padding: 12px 20px;
-  background: #4ade80;
-  color: #1a1a1a;
+  padding: var(--spacing-md) var(--spacing-xl);
+  background: var(--color-accent);
+  color: var(--color-bg-dark);
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-family: inherit;
   font-size: 1rem;
   font-weight: bold;
+  transition: background-color var(--transition-fast);
 }
 
 .input-form button:disabled {
@@ -284,18 +345,22 @@ main {
 }
 
 .input-form button:hover:not(:disabled) {
-  background: #22c55e;
+  background: var(--color-accent-hover);
 }
+
+/* ==========================================================================
+   Footer
+   ========================================================================== */
 
 footer {
   text-align: center;
-  padding: 12px 0;
+  padding: var(--spacing-md) 0;
   font-size: 0.75rem;
-  color: #666;
+  color: var(--color-text-dim);
 }
 
 footer a {
-  color: #4ade80;
+  color: var(--color-accent);
   text-decoration: none;
 }
 
@@ -303,18 +368,12 @@ footer a:hover {
   text-decoration: underline;
 }
 
-/* Game Selector */
-.game-selector {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  padding: 20px;
-}
+/* ==========================================================================
+   Game Selector
+   ========================================================================== */
 
 .game-selector h2 {
-  color: #4ade80;
+  color: var(--color-accent);
   margin-bottom: 30px;
   font-size: 1.5rem;
 }
@@ -322,7 +381,7 @@ footer a:hover {
 .game-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--spacing-md);
   width: 100%;
   max-width: 400px;
 }
@@ -331,29 +390,29 @@ footer a:hover {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: 16px 20px;
-  background: #252525;
-  border: 1px solid #333;
-  border-radius: 8px;
+  padding: 16px var(--spacing-xl);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: border-color var(--transition-fast), background-color var(--transition-fast);
   text-align: left;
   font-family: inherit;
 }
 
 .game-option:hover {
-  border-color: #4ade80;
-  background: #1e3a2f;
+  border-color: var(--color-accent);
+  background: var(--color-bg-user);
 }
 
 .game-name {
-  color: #e0e0e0;
+  color: var(--color-text);
   font-size: 1.1rem;
   font-weight: 500;
 }
 
 .game-description {
-  color: #888;
+  color: var(--color-text-muted);
   font-size: 0.875rem;
-  margin-top: 4px;
+  margin-top: var(--spacing-xs);
 }
