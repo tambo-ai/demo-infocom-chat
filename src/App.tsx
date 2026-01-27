@@ -450,7 +450,7 @@ function App() {
         )}
       </main>
       <footer>
-        Built with ❤️ with <a href="https://tambo.co" target="_blank" rel="noopener noreferrer">Tambo</a> | <a href="https://github.com/tambo-ai/demo-infocom-chat" target="_blank" rel="noopener noreferrer">GitHub</a>
+        Built with ❤️ with <a href="https://tambo.co" target="_blank" rel="noopener noreferrer">Tambo</a> | <a href="https://github.com/tambo-ai/demo-infocom-chat" target="_blank" rel="noopener noreferrer">GitHub</a> | <a href="https://news.ycombinator.com/item?id=46786618" target="_blank" rel="noopener noreferrer">Join the discussion on HN</a>
       </footer>
       {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
     </div>
