@@ -416,7 +416,11 @@ function App() {
         <TamboThreadInputProvider>
           <div className="app">
             <header className={headerCollapsed ? 'collapsed' : ''}>
-              <h1>Infocom Chat</h1>
+              <h1>
+                <a href="/" onClick={(e) => { e.preventDefault(); handleChangeGame(); }}>
+                  Infocom Chat
+                </a>
+              </h1>
               <p>{selectedGame ? selectedGame.name : 'Play text adventures with natural language'}</p>
               <div className="header-buttons">
                 {selectedGame && (

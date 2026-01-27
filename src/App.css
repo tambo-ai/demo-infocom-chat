@@ -101,9 +101,18 @@ header.collapsed {
 
 header h1 {
   margin: 0;
-  color: var(--color-accent);
   font-size: 1.25rem;
   transition: font-size var(--transition-normal);
+}
+
+header h1 a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+}
+
+header h1 a:hover {
+  opacity: 0.8;
 }
 
 header.collapsed h1 {
