@@ -254,3 +254,58 @@ footer a {
 footer a:hover {
   text-decoration: underline;
 }
+
+/* Game Selector */
+.game-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 20px;
+}
+
+.game-selector h2 {
+  color: #4ade80;
+  margin-bottom: 30px;
+  font-size: 1.5rem;
+}
+
+.game-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 400px;
+}
+
+.game-option {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 16px 20px;
+  background: #252525;
+  border: 1px solid #333;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  font-family: inherit;
+}
+
+.game-option:hover {
+  border-color: #4ade80;
+  background: #1e3a2f;
+}
+
+.game-name {
+  color: #e0e0e0;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.game-description {
+  color: #888;
+  font-size: 0.875rem;
+  margin-top: 4px;
+}

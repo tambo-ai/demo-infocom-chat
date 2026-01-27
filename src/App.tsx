@@ -8,7 +8,8 @@ import {
   type InitialTamboThreadMessage,
 } from '@tambo-ai/react';
 import { tools } from './lib/tambo';
-import { initializeGame, isGameInitialized, clearGameSave } from './lib/zmachine';
+import { initializeGame, isGameInitialized, clearGameSave, resetGame } from './lib/zmachine';
+import { games, getLastPlayedGame, setLastPlayedGame, getGameById, type GameInfo } from './lib/games';
 import './App.css';
 
 const systemMessage: InitialTamboThreadMessage = {
@@ -142,7 +143,27 @@ function ChatInterface({ gameIntro, onScroll }: { gameIntro: string | null; onSc
   );
 }
 
-function GameLoader({ onScroll }: { onScroll: (scrollTop: number) => void }) {
+function GameSelector({ onSelectGame }: { onSelectGame: (game: GameInfo) => void }) {
+  return (
+    <div className="game-selector">
+      <h2>Choose Your Adventure</h2>
+      <div className="game-list">
+        {games.map((game) => (
+          <button
+            key={game.id}
+            className="game-option"
+            onClick={() => onSelectGame(game)}
+          >
+            <span className="game-name">{game.name}</span>
+            {game.description && <span className="game-description">{game.description}</span>}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function GameLoader({ game, onScroll, onChangeGame }: { game: GameInfo; onScroll: (scrollTop: number) => void; onChangeGame: () => void }) {
   const [gameOutput, setGameOutput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -153,7 +174,7 @@ function GameLoader({ onScroll }: { onScroll: (scrollTop: number) => void }) {
       return;
     }
 
-    initializeGame('/zork1.z3')
+    initializeGame(game.file)
       .then((output) => {
         setGameOutput(output);
         setLoading(false);
@@ -162,12 +183,12 @@ function GameLoader({ onScroll }: { onScroll: (scrollTop: number) => void }) {
         setError(err instanceof Error ? err.message : 'Failed to load game');
         setLoading(false);
       });
-  }, []);
+  }, [game.file]);
 
   if (loading) {
     return (
       <div className="loading-screen">
-        <h1>Loading game...</h1>
+        <h1>Loading {game.name}...</h1>
         <p>Preparing your adventure</p>
       </div>
     );
@@ -179,6 +200,7 @@ function GameLoader({ onScroll }: { onScroll: (scrollTop: number) => void }) {
         <h1>Error</h1>
         <p>{error}</p>
         <button onClick={() => window.location.reload()}>Retry</button>
+        <button onClick={onChangeGame}>Choose Different Game</button>
       </div>
     );
   }
@@ -190,8 +212,87 @@ function App() {
   const apiKey = import.meta.env.VITE_TAMBO_API_KEY;
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
 
+  // Initialize selected game from URL path, localStorage, or null
+  const [selectedGame, setSelectedGame] = useState<GameInfo | null>(() => {
+    // Check URL path first (e.g., /zork1)
+    const pathGameId = window.location.pathname.slice(1); // Remove leading /
+    if (pathGameId) {
+      const pathGame = getGameById(pathGameId);
+      if (pathGame) {
+        return pathGame;
+      }
+    }
+
+    // Fall back to localStorage
+    const lastGameId = getLastPlayedGame();
+    if (lastGameId) {
+      return getGameById(lastGameId) || null;
+    }
+    // Auto-select if only one game available
+    if (games.length === 1) {
+      return games[0];
+    }
+    return null;
+  });
+
+  // Sync URL with selected game on initial load
+  useEffect(() => {
+    if (selectedGame && window.location.pathname !== `/${selectedGame.id}`) {
+      window.history.replaceState({}, '', `/${selectedGame.id}`);
+    }
+  }, []); // Only run once on mount
+
+  // Handle browser back/forward navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const pathGameId = window.location.pathname.slice(1);
+      if (pathGameId) {
+        const game = getGameById(pathGameId);
+        if (game) {
+          resetGame();
+          setSelectedGame(game);
+          return;
+        }
+      }
+      // No valid game in URL, go to selector
+      resetGame();
+      setSelectedGame(null);
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const handleScroll = useCallback((scrollTop: number) => {
     setHeaderCollapsed(scrollTop > 50);
+  }, []);
+
+  const handleSelectGame = useCallback((game: GameInfo) => {
+    setLastPlayedGame(game.id);
+    setSelectedGame(game);
+    // Update URL to match selected game
+    window.history.pushState({}, '', `/${game.id}`);
+  }, []);
+
+  const handleChangeGame = useCallback(() => {
+    resetGame();
+    setSelectedGame(null);
+    // Update URL back to root
+    window.history.pushState({}, '', '/');
+  }, []);
+
+  const handleNewGame = useCallback(() => {
+    if (confirm('Start a new game? Your progress will be lost.')) {
+      clearGameSave();
+      resetGame();
+      // If multiple games, go back to selector; otherwise just reload
+      if (games.length > 1) {
+        setSelectedGame(null);
+        window.history.pushState({}, '', '/');
+      } else {
+        window.location.reload();
+      }
+    }
   }, []);
 
   if (!apiKey) {
@@ -211,21 +312,19 @@ function App() {
           <div className="app">
             <header className={headerCollapsed ? 'collapsed' : ''}>
               <h1>Infocom Chat</h1>
-              <p>Play text adventures with natural language</p>
-              <button
-                className="reset-button"
-                onClick={() => {
-                  if (confirm('Start a new game? Your progress will be lost.')) {
-                    clearGameSave();
-                    window.location.reload();
-                  }
-                }}
-              >
-                New Game
-              </button>
+              <p>{selectedGame ? selectedGame.name : 'Play text adventures with natural language'}</p>
+              {selectedGame && (
+                <button className="reset-button" onClick={handleNewGame}>
+                  New Game
+                </button>
+              )}
             </header>
             <main>
-              <GameLoader onScroll={handleScroll} />
+              {selectedGame ? (
+                <GameLoader game={selectedGame} onScroll={handleScroll} onChangeGame={handleChangeGame} />
+              ) : (
+                <GameSelector onSelectGame={handleSelectGame} />
+              )}
             </main>
             <footer>
               Built with ❤️ with <a href="https://tambo.co" target="_blank" rel="noopener noreferrer">Tambo</a>

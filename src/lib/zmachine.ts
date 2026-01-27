@@ -172,3 +172,7 @@ export function clearGameSave(): void {
     currentRunner.clearSave();
   }
 }
+
+export function resetGame(): void {
+  currentRunner = null;
+}
