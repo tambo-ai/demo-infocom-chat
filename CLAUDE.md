@@ -46,10 +46,13 @@ The system prompt instructs the AI to BE the game, not a helper. It should:
 ## Commands
 
 ```bash
-npm run dev      # Start dev server
-npm run build    # Production build
-npm run preview  # Preview production build
+npm run dev         # Start dev server
+npm run check-types # Type-check without building (fast)
+npm run build       # Production build
+npm run preview     # Preview production build
 ```
+
+**Note:** Use `npm run check-types` to verify TypeScript compiles correctly. It's much faster than `npm run build` since it skips the Vite bundling step.
 
 ## Dependencies
 
