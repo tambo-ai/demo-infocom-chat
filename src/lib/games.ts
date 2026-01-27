@@ -12,13 +12,18 @@ export const games: GameInfo[] = [
     file: '/zork1.z3',
     description: 'The Great Underground Empire',
   },
-  // Add more games here as they become available
-  // {
-  //   id: 'zork2',
-  //   name: 'Zork II',
-  //   file: '/zork2.z3',
-  //   description: 'The Wizard of Frobozz',
-  // },
+  {
+    id: 'zork2',
+    name: 'Zork II',
+    file: '/zork2.z3',
+    description: 'The Wizard of Frobozz',
+  },
+  {
+    id: 'zork3',
+    name: 'Zork III',
+    file: '/zork3.z3',
+    description: 'The Dungeon Master',
+  },
 ];
 
 const LAST_GAME_KEY = 'infocom-chat-last-game';
