@@ -57,6 +57,24 @@ function ChatInterface({ gameIntro, onScroll }: { gameIntro: string | null; onSc
     }
   }, [isPending]);
 
+  // Focus input when window gains focus
+  useEffect(() => {
+    const handleWindowFocus = () => {
+      inputRef.current?.focus();
+    };
+    window.addEventListener('focus', handleWindowFocus);
+    return () => window.removeEventListener('focus', handleWindowFocus);
+  }, []);
+
+  // Focus input when clicking anywhere in the chat container (unless clicking interactive element)
+  const handleContainerClick = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    const isInteractive = target.closest('button, a, input, textarea, select');
+    if (!isInteractive) {
+      inputRef.current?.focus();
+    }
+  }, []);
+
   // Show thinking indicator only before assistant starts responding
   const lastMessage = thread.messages[thread.messages.length - 1];
   const showThinking = isPending && lastMessage?.role !== 'assistant';
@@ -74,7 +92,7 @@ function ChatInterface({ gameIntro, onScroll }: { gameIntro: string | null; onSc
   }, [onScroll]);
 
   return (
-    <div className="chat-container">
+    <div className="chat-container" onClick={handleContainerClick}>
       <div className="messages" ref={messagesRef} onScroll={handleScroll}>
         {gameIntro && (
           <div className="message game-intro-message">
