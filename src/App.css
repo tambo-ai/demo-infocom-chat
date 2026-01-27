@@ -528,6 +528,21 @@ header.collapsed .info-button {
   background: var(--color-accent-hover);
 }
 
+.input-form button.loading {
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
 /* ==========================================================================
    Footer
    ========================================================================== */

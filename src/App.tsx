@@ -148,10 +148,11 @@ function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps
         <button
           type="submit"
           disabled={isPending || !value.trim()}
+          className={isPending ? 'loading' : ''}
           onMouseDown={(e) => e.preventDefault()}
           onTouchStart={(e) => e.preventDefault()}
         >
-          {isPending ? '...' : '>'}
+          {isPending ? '>' : '>'}
         </button>
       </form>
     </div>
