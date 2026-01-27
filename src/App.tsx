@@ -39,7 +39,37 @@ You are the narrator of this interactive fiction. Stay in character. Stay in the
   ],
 };
 
-function ChatInterface({ gameIntro, onScroll }: { gameIntro: string | null; onScroll: (scrollTop: number) => void }) {
+interface ChatInterfaceProps {
+  gameIntro: string | null;
+  onScroll: (scrollTop: number) => void;
+  showCommands: boolean;
+}
+
+// Extract sendGameCommand calls from message content
+function extractGameCommands(content: unknown): string[] {
+  if (!Array.isArray(content)) return [];
+  const commands: string[] = [];
+  for (const part of content) {
+    if (
+      typeof part === 'object' &&
+      part !== null &&
+      'type' in part &&
+      part.type === 'tool_use' &&
+      'name' in part &&
+      part.name === 'sendGameCommand' &&
+      'input' in part &&
+      typeof part.input === 'object' &&
+      part.input !== null &&
+      'command' in part.input &&
+      typeof part.input.command === 'string'
+    ) {
+      commands.push(part.input.command);
+    }
+  }
+  return commands;
+}
+
+function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps) {
   const { thread } = useTamboThread();
   const { value, setValue, submit, isPending } = useTamboThreadInput();
   const messagesRef = useRef<HTMLDivElement>(null);
@@ -102,23 +132,36 @@ function ChatInterface({ gameIntro, onScroll }: { gameIntro: string | null; onSc
         )}
         {thread.messages
           .filter((message) => message.role === 'user' || message.role === 'assistant')
-          .map((message) => (
-            <div key={message.id} className={`message ${message.role}`}>
-              <div className="message-role">{message.role === 'user' ? '>' : 'Game:'}</div>
-              <div className="message-content">
-                {typeof message.content === 'string'
-                  ? message.content
-                  : Array.isArray(message.content)
-                    ? message.content.map((part, i) =>
-                        'text' in part && part.text ? <span key={i}>{part.text}</span> : null
-                      )
-                    : null}
+          .map((message) => {
+            const commands = message.role === 'assistant' ? extractGameCommands(message.content) : [];
+            return (
+              <div key={message.id} className="message-group">
+                {/* Show commands before assistant response if toggle is on */}
+                {showCommands && commands.length > 0 && (
+                  <div className="message command">
+                    <div className="message-content">
+                      {commands.map((cmd, i) => (
+                        <div key={i}>{cmd}</div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className={`message ${message.role}`}>
+                  <div className="message-content">
+                    {typeof message.content === 'string'
+                      ? message.content
+                      : Array.isArray(message.content)
+                        ? message.content.map((part, i) =>
+                            'text' in part && part.text ? <span key={i}>{part.text}</span> : null
+                          )
+                        : null}
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         {showThinking && (
           <div className="message assistant loading">
-            <div className="message-role">Game:</div>
             <div className="message-content">Thinking...</div>
           </div>
         )}
@@ -163,7 +206,14 @@ function GameSelector({ onSelectGame }: { onSelectGame: (game: GameInfo) => void
   );
 }
 
-function GameLoader({ game, onScroll, onChangeGame }: { game: GameInfo; onScroll: (scrollTop: number) => void; onChangeGame: () => void }) {
+interface GameLoaderProps {
+  game: GameInfo;
+  onScroll: (scrollTop: number) => void;
+  onChangeGame: () => void;
+  showCommands: boolean;
+}
+
+function GameLoader({ game, onScroll, onChangeGame, showCommands }: GameLoaderProps) {
   const [gameOutput, setGameOutput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -205,12 +255,13 @@ function GameLoader({ game, onScroll, onChangeGame }: { game: GameInfo; onScroll
     );
   }
 
-  return <ChatInterface gameIntro={gameOutput} onScroll={onScroll} />;
+  return <ChatInterface gameIntro={gameOutput} onScroll={onScroll} showCommands={showCommands} />;
 }
 
 function App() {
   const apiKey = import.meta.env.VITE_TAMBO_API_KEY;
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
+  const [showCommands, setShowCommands] = useState(false);
 
   // Initialize selected game from URL path, localStorage, or null
   const [selectedGame, setSelectedGame] = useState<GameInfo | null>(() => {
@@ -314,14 +365,23 @@ function App() {
               <h1>Infocom Chat</h1>
               <p>{selectedGame ? selectedGame.name : 'Play text adventures with natural language'}</p>
               {selectedGame && (
-                <button className="reset-button" onClick={handleNewGame}>
-                  New Game
-                </button>
+                <div className="header-buttons">
+                  <button
+                    className={`toggle-button ${showCommands ? 'active' : ''}`}
+                    onClick={() => setShowCommands(!showCommands)}
+                    title={showCommands ? 'Hide game commands' : 'Show game commands'}
+                  >
+                    <span className="toggle-icon">&gt;_</span>
+                  </button>
+                  <button className="reset-button" onClick={handleNewGame}>
+                    New Game
+                  </button>
+                </div>
               )}
             </header>
             <main>
               {selectedGame ? (
-                <GameLoader game={selectedGame} onScroll={handleScroll} onChangeGame={handleChangeGame} />
+                <GameLoader game={selectedGame} onScroll={handleScroll} onChangeGame={handleChangeGame} showCommands={showCommands} />
               ) : (
                 <GameSelector onSelectGame={handleSelectGame} />
               )}

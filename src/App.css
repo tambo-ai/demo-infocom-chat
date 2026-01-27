@@ -50,6 +50,43 @@ header p::before {
   color: #555;
 }
 
+.header-buttons {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.toggle-button {
+  background: transparent;
+  border: 1px solid #444;
+  color: #666;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.toggle-button:hover {
+  border-color: #666;
+  color: #888;
+}
+
+.toggle-button.active {
+  border-color: #4ade80;
+  color: #4ade80;
+}
+
+.toggle-icon {
+  font-family: monospace;
+  font-weight: bold;
+}
+
+header.collapsed .toggle-button {
+  padding: 2px 6px;
+  font-size: 0.7rem;
+}
+
 .reset-button {
   background: transparent;
   border: 1px solid #444;
@@ -59,7 +96,6 @@ header p::before {
   font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin-left: auto;
 }
 
 .reset-button:hover {
@@ -173,6 +209,18 @@ main {
 
 .message.loading {
   opacity: 0.7;
+}
+
+.message.command {
+  background: #1a1a2e;
+  border: 1px solid #2d2d4a;
+  font-family: monospace;
+  font-size: 0.875rem;
+  color: #8b8bcd;
+}
+
+.message-group {
+  display: contents;
 }
 
 .message-role {
