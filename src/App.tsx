@@ -1,23 +1,15 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import {
   TamboProvider,
-  TamboThreadProvider,
-  TamboThreadInputProvider,
   useTamboThread,
   useTamboThreadInput,
-  type InitialTamboThreadMessage,
 } from '@tambo-ai/react';
 import { tools } from './lib/tambo';
 import { initializeGame, isGameInitialized, clearGameSave, resetGame } from './lib/zmachine';
 import { games, getLastPlayedGame, setLastPlayedGame, getGameById, type GameInfo } from './lib/games';
 import './App.css';
 
-const systemMessage: InitialTamboThreadMessage = {
-  role: 'system',
-  content: [
-    {
-      type: 'text',
-      text: `You ARE the text adventure game. You are not an assistant or helper - you are the game itself, enhanced with natural language understanding.
+const systemPrompt = `You ARE the text adventure game. You are not an assistant or helper - you are the game itself, enhanced with natural language understanding.
 
 CRITICAL RULES:
 1. Call sendGameCommand for EVERY user message. No exceptions.
@@ -27,17 +19,14 @@ CRITICAL RULES:
    - Parser errors → describe what happens when the player tries (e.g., "You look around for something to paint with, but find nothing suitable.")
    - "I don't understand" → rephrase as the character being confused or the action not making sense in context
    - Keep the player immersed - they should feel like the game just got smarter, not like there's an AI mediating
-5. For successful commands, return the game's output directly or with minimal, in-world embellishment.
+5. For successful commands, you MUST include the game's actual output. You may augment it by slightly rewording, adding flavor text, or providing commentary relevant to the user's intent - but never hide, omit, or summarize away what the game actually said. The player should always know what happened.
 6. If the user's message contains multiple actions, make SEPARATE sequential tool calls for each.
 7. Interpret casual language as game commands:
    - Greetings → LOOK
    - "what do I have?" → INVENTORY
    - Questions about surroundings → LOOK or EXAMINE
 
-You are the narrator of this interactive fiction. Stay in character. Stay in the world.`,
-    },
-  ],
-};
+You are the narrator of this interactive fiction. Stay in character. Stay in the world.`;
 
 interface ChatInterfaceProps {
   gameIntro: string | null;
@@ -80,30 +69,12 @@ function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [thread.messages, isPending]);
 
-  // Refocus input when no longer pending
+  // Refocus input when submission completes
   useEffect(() => {
     if (!isPending) {
       inputRef.current?.focus();
     }
   }, [isPending]);
-
-  // Focus input when window gains focus
-  useEffect(() => {
-    const handleWindowFocus = () => {
-      inputRef.current?.focus();
-    };
-    window.addEventListener('focus', handleWindowFocus);
-    return () => window.removeEventListener('focus', handleWindowFocus);
-  }, []);
-
-  // Focus input when clicking anywhere in the chat container (unless clicking interactive element)
-  const handleContainerClick = useCallback((e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    const isInteractive = target.closest('button, a, input, textarea, select');
-    if (!isInteractive) {
-      inputRef.current?.focus();
-    }
-  }, []);
 
   // Show thinking indicator only before assistant starts responding
   const lastMessage = thread.messages[thread.messages.length - 1];
@@ -122,7 +93,7 @@ function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps
   }, [onScroll]);
 
   return (
-    <div className="chat-container" onClick={handleContainerClick}>
+    <div className="chat-container">
       <div className="messages" ref={messagesRef} onScroll={handleScroll}>
         {gameIntro && (
           <div className="message game-intro-message">
@@ -318,7 +289,7 @@ function GameLoader({ game, onScroll, onChangeGame, showCommands }: GameLoaderPr
 }
 
 function App() {
-  const apiKey = import.meta.env.VITE_TAMBO_API_KEY;
+  const { switchCurrentThread } = useTamboThread();
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [showCommands, setShowCommands] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
@@ -362,17 +333,19 @@ function App() {
         if (game) {
           resetGame();
           setSelectedGame(game);
+          switchCurrentThread(undefined as unknown as string);
           return;
         }
       }
       // No valid game in URL, go to selector
       resetGame();
       setSelectedGame(null);
+      switchCurrentThread(undefined as unknown as string);
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
+  }, [switchCurrentThread]);
 
   const handleScroll = useCallback((scrollTop: number) => {
     setHeaderCollapsed(scrollTop > 50);
@@ -388,23 +361,85 @@ function App() {
   const handleChangeGame = useCallback(() => {
     resetGame();
     setSelectedGame(null);
+    switchCurrentThread(undefined as unknown as string);
     // Update URL back to root
     window.history.pushState({}, '', '/');
-  }, []);
+  }, [switchCurrentThread]);
 
   const handleNewGame = useCallback(() => {
     if (confirm('Start a new game? Your progress will be lost.')) {
       clearGameSave();
       resetGame();
-      // If multiple games, go back to selector; otherwise just reload
+      switchCurrentThread(undefined as unknown as string);
+      // If multiple games, go back to selector
       if (games.length > 1) {
         setSelectedGame(null);
         window.history.pushState({}, '', '/');
-      } else {
-        window.location.reload();
       }
+      // Otherwise stay on current game with fresh thread
     }
-  }, []);
+  }, [switchCurrentThread]);
+
+  return (
+    <div className="app">
+      <header className={headerCollapsed ? 'collapsed' : ''}>
+        <h1>
+          <a href="/" onClick={(e) => { e.preventDefault(); handleChangeGame(); }}>
+            Infocom Chat
+          </a>
+        </h1>
+        <p>{selectedGame ? selectedGame.name : 'Play text adventures with natural language'}</p>
+        <div className="header-buttons">
+          {selectedGame && (
+            <>
+              <button
+                className={`toggle-button ${showCommands ? 'active' : ''}`}
+                onClick={() => setShowCommands(!showCommands)}
+                title={showCommands ? 'Hide game commands' : 'Show game commands'}
+              >
+                <span className="toggle-icon">&gt;_</span>
+              </button>
+              <button className="reset-button" onClick={handleNewGame}>
+                New Game
+              </button>
+            </>
+          )}
+          <button
+            className="info-button"
+            onClick={() => setShowInfo(true)}
+            title="How it works"
+          >
+            ?
+          </button>
+        </div>
+      </header>
+      <main>
+        {selectedGame ? (
+          <GameLoader game={selectedGame} onScroll={handleScroll} onChangeGame={handleChangeGame} showCommands={showCommands} />
+        ) : (
+          <GameSelector onSelectGame={handleSelectGame} />
+        )}
+      </main>
+      <footer>
+        Built with ❤️ with <a href="https://tambo.co" target="_blank" rel="noopener noreferrer">Tambo</a>
+      </footer>
+      {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
+    </div>
+  );
+}
+
+const initialMessages = [
+  {
+    id: 'system-message',
+    role: 'system' as const,
+    content: [{ type: 'text' as const, text: systemPrompt }],
+    createdAt: new Date().toISOString(),
+    componentState: {},
+  },
+];
+
+function AppWithProviders() {
+  const apiKey = import.meta.env.VITE_TAMBO_API_KEY;
 
   if (!apiKey) {
     return (
@@ -417,57 +452,10 @@ function App() {
   }
 
   return (
-    <TamboProvider apiKey={apiKey} tools={tools}>
-      <TamboThreadProvider initialMessages={[systemMessage]}>
-        <TamboThreadInputProvider>
-          <div className="app">
-            <header className={headerCollapsed ? 'collapsed' : ''}>
-              <h1>
-                <a href="/" onClick={(e) => { e.preventDefault(); handleChangeGame(); }}>
-                  Infocom Chat
-                </a>
-              </h1>
-              <p>{selectedGame ? selectedGame.name : 'Play text adventures with natural language'}</p>
-              <div className="header-buttons">
-                {selectedGame && (
-                  <>
-                    <button
-                      className={`toggle-button ${showCommands ? 'active' : ''}`}
-                      onClick={() => setShowCommands(!showCommands)}
-                      title={showCommands ? 'Hide game commands' : 'Show game commands'}
-                    >
-                      <span className="toggle-icon">&gt;_</span>
-                    </button>
-                    <button className="reset-button" onClick={handleNewGame}>
-                      New Game
-                    </button>
-                  </>
-                )}
-                <button
-                  className="info-button"
-                  onClick={() => setShowInfo(true)}
-                  title="How it works"
-                >
-                  ?
-                </button>
-              </div>
-            </header>
-            <main>
-              {selectedGame ? (
-                <GameLoader game={selectedGame} onScroll={handleScroll} onChangeGame={handleChangeGame} showCommands={showCommands} />
-              ) : (
-                <GameSelector onSelectGame={handleSelectGame} />
-              )}
-            </main>
-            <footer>
-              Built with ❤️ with <a href="https://tambo.co" target="_blank" rel="noopener noreferrer">Tambo</a>
-            </footer>
-            {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
-          </div>
-        </TamboThreadInputProvider>
-      </TamboThreadProvider>
+    <TamboProvider apiKey={apiKey} tools={tools} initialMessages={initialMessages}>
+      <App />
     </TamboProvider>
   );
 }
 
-export default App;
+export default AppWithProviders;
