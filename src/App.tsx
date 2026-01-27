@@ -181,6 +181,64 @@ function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps
   );
 }
 
+function InfoModal({ onClose }: { onClose: () => void }) {
+  // Close on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [onClose]);
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+        <button className="modal-close" onClick={onClose} aria-label="Close">
+          &times;
+        </button>
+        <h2>How It Works</h2>
+
+        <section>
+          <h3>Z-Machine Engine</h3>
+          <p>
+            The game runs entirely in your browser using{' '}
+            <a href="https://github.com/AnotherDole/jszm" target="_blank" rel="noopener noreferrer">
+              JSZM
+            </a>
+            , a JavaScript implementation of the Z-machine virtual machine that Infocom
+            created in the 1980s to run their text adventures across different platforms.
+          </p>
+        </section>
+
+        <section>
+          <h3>Natural Language via Tambo</h3>
+          <p>
+            The chat interface is powered by{' '}
+            <a href="https://tambo.co" target="_blank" rel="noopener noreferrer">
+              Tambo
+            </a>
+            , which manages conversation history, streaming responses, and tool orchestration.
+            When you type a message, the LLM translates it into commands the game understands
+            via simple tool calls.
+          </p>
+        </section>
+
+        <section>
+          <h3>Try These Examples</h3>
+          <p>The LLM can handle surprisingly complex instructions:</p>
+          <ul className="examples-list">
+            <li>"Walk clockwise starting with north"</li>
+            <li>"Eat everything in the sack"</li>
+            <li>"Explore the house and collect everything you find"</li>
+            <li>"What's the most interesting thing here?"</li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  );
+}
+
 function GameSelector({ onSelectGame }: { onSelectGame: (game: GameInfo) => void }) {
   return (
     <div className="game-selector">
@@ -257,6 +315,7 @@ function App() {
   const apiKey = import.meta.env.VITE_TAMBO_API_KEY;
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [showCommands, setShowCommands] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
 
   // Initialize selected game from URL path, localStorage, or null
   const [selectedGame, setSelectedGame] = useState<GameInfo | null>(() => {
@@ -359,20 +418,29 @@ function App() {
             <header className={headerCollapsed ? 'collapsed' : ''}>
               <h1>Infocom Chat</h1>
               <p>{selectedGame ? selectedGame.name : 'Play text adventures with natural language'}</p>
-              {selectedGame && (
-                <div className="header-buttons">
-                  <button
-                    className={`toggle-button ${showCommands ? 'active' : ''}`}
-                    onClick={() => setShowCommands(!showCommands)}
-                    title={showCommands ? 'Hide game commands' : 'Show game commands'}
-                  >
-                    <span className="toggle-icon">&gt;_</span>
-                  </button>
-                  <button className="reset-button" onClick={handleNewGame}>
-                    New Game
-                  </button>
-                </div>
-              )}
+              <div className="header-buttons">
+                {selectedGame && (
+                  <>
+                    <button
+                      className={`toggle-button ${showCommands ? 'active' : ''}`}
+                      onClick={() => setShowCommands(!showCommands)}
+                      title={showCommands ? 'Hide game commands' : 'Show game commands'}
+                    >
+                      <span className="toggle-icon">&gt;_</span>
+                    </button>
+                    <button className="reset-button" onClick={handleNewGame}>
+                      New Game
+                    </button>
+                  </>
+                )}
+                <button
+                  className="info-button"
+                  onClick={() => setShowInfo(true)}
+                  title="How it works"
+                >
+                  ?
+                </button>
+              </div>
             </header>
             <main>
               {selectedGame ? (
@@ -384,6 +452,7 @@ function App() {
             <footer>
               Built with ❤️ with <a href="https://tambo.co" target="_blank" rel="noopener noreferrer">Tambo</a>
             </footer>
+            {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
           </div>
         </TamboThreadInputProvider>
       </TamboThreadProvider>

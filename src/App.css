@@ -175,9 +175,131 @@ header p::before {
 }
 
 header.collapsed .toggle-button,
-header.collapsed .reset-button {
+header.collapsed .reset-button,
+header.collapsed .info-button {
   padding: 2px 6px;
   font-size: 0.7rem;
+}
+
+.info-button {
+  color: var(--color-text-dim);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-weight: bold;
+  min-width: 24px;
+}
+
+.info-button:hover {
+  border-color: var(--color-text-dim);
+  color: var(--color-text-muted);
+}
+
+/* ==========================================================================
+   Info Modal
+   ========================================================================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  padding: var(--spacing-xl);
+}
+
+.modal-content {
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: var(--spacing-xl);
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: var(--spacing-xs);
+  line-height: 1;
+  transition: color var(--transition-fast);
+}
+
+.modal-close:hover {
+  color: var(--color-text);
+}
+
+.modal-content h2 {
+  margin: 0 0 var(--spacing-xl);
+  color: var(--color-accent);
+  font-size: 1.25rem;
+}
+
+.modal-content section {
+  margin-bottom: var(--spacing-xl);
+}
+
+.modal-content section:last-child {
+  margin-bottom: 0;
+}
+
+.modal-content h3 {
+  margin: 0 0 var(--spacing-sm);
+  color: var(--color-text);
+  font-size: 1rem;
+}
+
+.modal-content p {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.modal-content a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.modal-content a:hover {
+  text-decoration: underline;
+}
+
+.examples-list {
+  margin: var(--spacing-sm) 0 0;
+  padding-left: var(--spacing-xl);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.8;
+}
+
+.examples-list li {
+  font-family: monospace;
+  color: var(--color-command);
+}
+
+/* Mobile: full-screen modal */
+@media (max-width: 600px) {
+  .modal-overlay {
+    padding: 0;
+  }
+
+  .modal-content {
+    max-width: none;
+    max-height: none;
+    height: 100%;
+    border-radius: 0;
+    border: none;
+  }
 }
 
 /* ==========================================================================
