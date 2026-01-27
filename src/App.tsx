@@ -174,7 +174,12 @@ function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps
           disabled={isPending}
           autoFocus
         />
-        <button type="submit" disabled={isPending || !value.trim()}>
+        <button
+          type="submit"
+          disabled={isPending || !value.trim()}
+          onMouseDown={(e) => e.preventDefault()}
+          onTouchStart={(e) => e.preventDefault()}
+        >
           {isPending ? '...' : '>'}
         </button>
       </form>
