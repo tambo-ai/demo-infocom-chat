@@ -469,6 +469,15 @@ const initialMessages = [
 
 function AppWithProviders() {
   const apiKey = import.meta.env.VITE_TAMBO_API_KEY;
+  const [contextKey] = useState(() => {
+    const storageKey = 'infocom-chat-user-id';
+    let userId = localStorage.getItem(storageKey);
+    if (!userId) {
+      userId = crypto.randomUUID();
+      localStorage.setItem(storageKey, userId);
+    }
+    return userId;
+  });
 
   if (!apiKey) {
     return (
@@ -481,7 +490,7 @@ function AppWithProviders() {
   }
 
   return (
-    <TamboProvider apiKey={apiKey} tools={tools} initialMessages={initialMessages}>
+    <TamboProvider apiKey={apiKey} tools={tools} initialMessages={initialMessages} contextKey={contextKey}>
       <App />
     </TamboProvider>
   );
