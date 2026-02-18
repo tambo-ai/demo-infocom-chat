@@ -1,5 +1,11 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { TamboProvider, useTamboThreadInput } from "@tambo-ai/react";
+import {
+  TamboProvider,
+  useTamboThreadInput,
+  useTambo,
+  type TamboThreadMessage,
+  type InitialInputMessage,
+} from "@tambo-ai/react";
 import { tools } from "./lib/tambo";
 import {
   initializeGame,
@@ -15,7 +21,6 @@ import {
   type GameInfo,
 } from "./lib/games";
 import "./App.css";
-import { useTambo } from "@tambo-ai/react";
 
 const systemPrompt = `You ARE the text adventure game. You are not an assistant or helper - you are the game itself, enhanced with natural language understanding.
 
@@ -65,29 +70,17 @@ function TipsBanner({ collapsed }: { collapsed: boolean }) {
   );
 }
 
-// Extract sendGameCommand calls from message toolCallRequest
-function extractGameCommand(message: unknown): string | null {
-  if (
-    typeof message === "object" &&
-    message !== null &&
-    "toolCallRequest" in message &&
-    typeof message.toolCallRequest === "object" &&
-    message.toolCallRequest !== null
-  ) {
-    const request = message.toolCallRequest as {
-      toolName?: string;
-      parameters?: Array<{ parameterName?: string; parameterValue?: string }>;
-    };
+// Extract sendGameCommand calls from message content blocks
+function extractGameCommand(message: TamboThreadMessage): string | null {
+  for (const block of message.content) {
     if (
-      request.toolName === "sendGameCommand" &&
-      Array.isArray(request.parameters)
+      block.type === "tool_use" &&
+      block.name === "sendGameCommand" &&
+      typeof block.input === "object" &&
+      block.input !== null &&
+      "command" in block.input
     ) {
-      const commandParam = request.parameters.find(
-        (p) => p.parameterName === "command",
-      );
-      if (commandParam?.parameterValue) {
-        return commandParam.parameterValue;
-      }
+      return String(block.input.command);
     }
   }
   return null;
@@ -148,7 +141,10 @@ function ChatInterface({
         {messages
           .filter(
             (message) =>
-              message.role === "user" || message.role === "assistant",
+              (message.role === "user" || message.role === "assistant") &&
+              message.content.some(
+                (block) => block.type === "text" && block.text.trim(),
+              ),
           )
           .map((message) => {
             const command =
@@ -543,13 +539,10 @@ function App() {
   );
 }
 
-const initialMessages = [
+const initialMessages: InitialInputMessage[] = [
   {
-    id: "system-message",
-    role: "system" as const,
-    content: [{ type: "text" as const, text: systemPrompt }],
-    createdAt: new Date().toISOString(),
-    componentState: {},
+    role: "system",
+    content: [{ type: "text", text: systemPrompt }],
   },
 ];
 
