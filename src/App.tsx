@@ -183,25 +183,21 @@ function ChatInterface({
 
             return (
               <div key={message.id} className="message-group">
-                <div className={`message ${message.role}`}>
-                  <div className="message-content">
-                    {typeof message.content === "string"
-                      ? message.content
-                      : Array.isArray(message.content)
-                        ? message.content.map((part, i) =>
-                            "text" in part && part.text ? (
-                              <span key={i}>{part.text}</span>
-                            ) : null,
-                          )
-                        : null}
-                  </div>
-                </div>
-                {/* Show command after assistant response */}
+                {/* Show parser command above assistant response */}
                 {showCommands && command && (
                   <div className="message command">
                     <div className="message-content">{command}</div>
                   </div>
                 )}
+                <div className={`message ${message.role}`}>
+                  <div className="message-content">
+                    {message.content.map((part, i) =>
+                      "text" in part && part.text ? (
+                        <span key={i}>{part.text}</span>
+                      ) : null,
+                    )}
+                  </div>
+                </div>
               </div>
             );
           })}
