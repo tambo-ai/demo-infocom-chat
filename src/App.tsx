@@ -102,10 +102,13 @@ function findGameCommand(
   const direct = getGameCommandFromMessage(allMessages[idx]);
   if (direct) return direct;
 
-  // Walk backwards to find a preceding assistant message with a tool_use block
+  // Walk backwards to find the nearest assistant message with a tool_use block.
+  // Skip over tool_result "user" messages (they sit between tool_use and text),
+  // but stop at a real user message (one with text content).
   for (let i = idx - 1; i >= 0; i--) {
     const m = allMessages[i];
-    if (m.role !== "assistant") break;
+    if (m.role === "user" && m.content.some((b) => b.type === "text")) break;
+    if (m.role !== "assistant") continue;
     const cmd = getGameCommandFromMessage(m);
     if (cmd) return cmd;
   }
