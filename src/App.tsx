@@ -1,13 +1,26 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
   TamboProvider,
-  useTamboThread,
   useTamboThreadInput,
-} from '@tambo-ai/react';
-import { tools } from './lib/tambo';
-import { initializeGame, isGameInitialized, clearGameSave, resetGame } from './lib/zmachine';
-import { games, getLastPlayedGame, setLastPlayedGame, getGameById, type GameInfo } from './lib/games';
-import './App.css';
+  useTambo,
+  type TamboThreadMessage,
+  type InitialInputMessage,
+} from "@tambo-ai/react";
+import { tools } from "./lib/tambo";
+import {
+  initializeGame,
+  isGameInitialized,
+  clearGameSave,
+  resetGame,
+} from "./lib/zmachine";
+import {
+  games,
+  getLastPlayedGame,
+  setLastPlayedGame,
+  getGameById,
+  type GameInfo,
+} from "./lib/games";
+import "./App.css";
 
 const systemPrompt = `You ARE the text adventure game. You are not an assistant or helper - you are the game itself, enhanced with natural language understanding.
 
@@ -36,14 +49,15 @@ interface ChatInterfaceProps {
 
 function TipsBanner({ collapsed }: { collapsed: boolean }) {
   return (
-    <div className={`tips-banner ${collapsed ? 'collapsed' : ''}`}>
+    <div className={`tips-banner ${collapsed ? "collapsed" : ""}`}>
       <div className="tips-banner-content">
         <div className="tips-banner-header">
           <span className="tips-banner-icon">&#x2728;</span>
           <span className="tips-banner-title">Try Natural Language</span>
         </div>
         <p className="tips-banner-description">
-          You can speak to the game like a person, not a parser. Try complex commands like:
+          You can speak to the game like a person, not a parser. Try complex
+          commands like:
         </p>
         <ul className="tips-banner-examples">
           <li>"Open the mailbox and read whatever's inside"</li>
@@ -56,31 +70,57 @@ function TipsBanner({ collapsed }: { collapsed: boolean }) {
   );
 }
 
-// Extract sendGameCommand calls from message toolCallRequest
-function extractGameCommand(message: unknown): string | null {
-  if (
-    typeof message === 'object' &&
-    message !== null &&
-    'toolCallRequest' in message &&
-    typeof message.toolCallRequest === 'object' &&
-    message.toolCallRequest !== null
-  ) {
-    const request = message.toolCallRequest as {
-      toolName?: string;
-      parameters?: Array<{ parameterName?: string; parameterValue?: string }>;
-    };
-    if (request.toolName === 'sendGameCommand' && Array.isArray(request.parameters)) {
-      const commandParam = request.parameters.find(p => p.parameterName === 'command');
-      if (commandParam?.parameterValue) {
-        return commandParam.parameterValue;
-      }
+// Find the last sendGameCommand tool_use in a message's content blocks
+function getGameCommandFromMessage(
+  message: TamboThreadMessage,
+): string | null {
+  for (const block of message.content) {
+    if (
+      block.type === "tool_use" &&
+      block.name === "sendGameCommand" &&
+      typeof block.input === "object" &&
+      block.input !== null &&
+      "command" in block.input
+    ) {
+      return String(block.input.command);
     }
   }
   return null;
 }
 
-function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps) {
-  const { thread } = useTamboThread();
+// Find the game command associated with a text-bearing assistant message.
+// In v1, tool_use blocks may be in a preceding assistant message, so we
+// search backwards through all messages to find the nearest one.
+function findGameCommand(
+  allMessages: TamboThreadMessage[],
+  messageId: string,
+): string | null {
+  const idx = allMessages.findIndex((m) => m.id === messageId);
+  if (idx < 0) return null;
+
+  // Check the message itself first
+  const direct = getGameCommandFromMessage(allMessages[idx]);
+  if (direct) return direct;
+
+  // Walk backwards to find the nearest assistant message with a tool_use block.
+  // Skip over tool_result "user" messages (they sit between tool_use and text),
+  // but stop at a real user message (one with text content).
+  for (let i = idx - 1; i >= 0; i--) {
+    const m = allMessages[i];
+    if (m.role === "user" && m.content.some((b) => b.type === "text")) break;
+    if (m.role !== "assistant") continue;
+    const cmd = getGameCommandFromMessage(m);
+    if (cmd) return cmd;
+  }
+  return null;
+}
+
+function ChatInterface({
+  gameIntro,
+  onScroll,
+  showCommands,
+}: ChatInterfaceProps) {
+  const { messages } = useTambo();
   const { value, setValue, submit, isPending } = useTamboThreadInput();
   const messagesRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -89,8 +129,8 @@ function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [thread.messages, isPending]);
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, isPending]);
 
   // Refocus input when submission completes
   useEffect(() => {
@@ -100,8 +140,8 @@ function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps
   }, [isPending]);
 
   // Show thinking indicator only before assistant starts responding
-  const lastMessage = thread.messages[thread.messages.length - 1];
-  const showThinking = isPending && lastMessage?.role !== 'assistant';
+  const lastMessage = messages[messages.length - 1];
+  const showThinking = isPending && lastMessage?.role !== "assistant";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,7 +149,7 @@ function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps
     if (!tipsBannerCollapsed) {
       setTipsBannerCollapsed(true);
     }
-    submit({ streamResponse: true });
+    submit();
   };
 
   const handleScroll = useCallback(() => {
@@ -127,30 +167,37 @@ function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps
           </div>
         )}
         <TipsBanner collapsed={tipsBannerCollapsed} />
-        {thread.messages
-          .filter((message) => message.role === 'user' || message.role === 'assistant')
+        {messages
+          .filter(
+            (message) =>
+              (message.role === "user" || message.role === "assistant") &&
+              message.content.some(
+                (block) => block.type === "text" && block.text.trim(),
+              ),
+          )
           .map((message) => {
-            const command = message.role === 'assistant' ? extractGameCommand(message) : null;
+            const command =
+              message.role === "assistant"
+                ? findGameCommand(messages, message.id)
+                : null;
 
             return (
               <div key={message.id} className="message-group">
-                <div className={`message ${message.role}`}>
-                  <div className="message-content">
-                    {typeof message.content === 'string'
-                      ? message.content
-                      : Array.isArray(message.content)
-                        ? message.content.map((part, i) =>
-                            'text' in part && part.text ? <span key={i}>{part.text}</span> : null
-                          )
-                        : null}
-                  </div>
-                </div>
-                {/* Show command after assistant response */}
+                {/* Show parser command above assistant response */}
                 {showCommands && command && (
                   <div className="message command">
                     <div className="message-content">{command}</div>
                   </div>
                 )}
+                <div className={`message ${message.role}`}>
+                  <div className="message-content">
+                    {message.content.map((part, i) =>
+                      "text" in part && part.text ? (
+                        <span key={i}>{part.text}</span>
+                      ) : null,
+                    )}
+                  </div>
+                </div>
               </div>
             );
           })}
@@ -175,11 +222,11 @@ function ChatInterface({ gameIntro, onScroll, showCommands }: ChatInterfaceProps
         <button
           type="submit"
           disabled={isPending || !value.trim()}
-          className={isPending ? 'loading' : ''}
+          className={isPending ? "loading" : ""}
           onMouseDown={(e) => e.preventDefault()}
           onTouchStart={(e) => e.preventDefault()}
         >
-          {isPending ? '>' : '>'}
+          {isPending ? ">" : ">"}
         </button>
       </form>
     </div>
@@ -190,10 +237,10 @@ function InfoModal({ onClose }: { onClose: () => void }) {
   // Close on escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === "Escape") onClose();
     };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
   }, [onClose]);
 
   return (
@@ -207,25 +254,34 @@ function InfoModal({ onClose }: { onClose: () => void }) {
         <section>
           <h3>Z-Machine Engine</h3>
           <p>
-            The game runs entirely in your browser using{' '}
-            <a href="https://github.com/DLehenbauer/jszm" target="_blank" rel="noopener noreferrer">
+            The game runs entirely in your browser using{" "}
+            <a
+              href="https://github.com/DLehenbauer/jszm"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               JSZM
             </a>
-            , a JavaScript implementation of the Z-machine virtual machine that Infocom
-            created in the 1980s to run their text adventures across different platforms.
+            , a JavaScript implementation of the Z-machine virtual machine that
+            Infocom created in the 1980s to run their text adventures across
+            different platforms.
           </p>
         </section>
 
         <section>
           <h3>Natural Language via Tambo</h3>
           <p>
-            The chat interface is powered by{' '}
-            <a href="https://tambo.co" target="_blank" rel="noopener noreferrer">
+            The chat interface is powered by{" "}
+            <a
+              href="https://tambo.co"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Tambo
             </a>
-            , which manages conversation history, streaming responses, and tool orchestration.
-            When you type a message, the LLM translates it into commands the game understands
-            via simple tool calls.
+            , which manages conversation history, streaming responses, and tool
+            orchestration. When you type a message, the LLM translates it into
+            commands the game understands via simple tool calls.
           </p>
         </section>
 
@@ -244,7 +300,11 @@ function InfoModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-function GameSelector({ onSelectGame }: { onSelectGame: (game: GameInfo) => void }) {
+function GameSelector({
+  onSelectGame,
+}: {
+  onSelectGame: (game: GameInfo) => void;
+}) {
   return (
     <div className="game-selector">
       <h2>Choose Your Adventure</h2>
@@ -256,7 +316,9 @@ function GameSelector({ onSelectGame }: { onSelectGame: (game: GameInfo) => void
             onClick={() => onSelectGame(game)}
           >
             <span className="game-name">{game.name}</span>
-            {game.description && <span className="game-description">{game.description}</span>}
+            {game.description && (
+              <span className="game-description">{game.description}</span>
+            )}
           </button>
         ))}
       </div>
@@ -271,7 +333,12 @@ interface GameLoaderProps {
   showCommands: boolean;
 }
 
-function GameLoader({ game, onScroll, onChangeGame, showCommands }: GameLoaderProps) {
+function GameLoader({
+  game,
+  onScroll,
+  onChangeGame,
+  showCommands,
+}: GameLoaderProps) {
   const [gameOutput, setGameOutput] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -288,7 +355,7 @@ function GameLoader({ game, onScroll, onChangeGame, showCommands }: GameLoaderPr
         setLoading(false);
       })
       .catch((err) => {
-        setError(err instanceof Error ? err.message : 'Failed to load game');
+        setError(err instanceof Error ? err.message : "Failed to load game");
         setLoading(false);
       });
   }, [game.file]);
@@ -313,11 +380,17 @@ function GameLoader({ game, onScroll, onChangeGame, showCommands }: GameLoaderPr
     );
   }
 
-  return <ChatInterface gameIntro={gameOutput} onScroll={onScroll} showCommands={showCommands} />;
+  return (
+    <ChatInterface
+      gameIntro={gameOutput}
+      onScroll={onScroll}
+      showCommands={showCommands}
+    />
+  );
 }
 
 function App() {
-  const { startNewThread } = useTamboThread();
+  const { startNewThread } = useTambo();
   const [headerCollapsed, setHeaderCollapsed] = useState(false);
   const [showCommands, setShowCommands] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
@@ -348,7 +421,7 @@ function App() {
   // Sync URL with selected game on initial load
   useEffect(() => {
     if (selectedGame && window.location.pathname !== `/${selectedGame.id}`) {
-      window.history.replaceState({}, '', `/${selectedGame.id}`);
+      window.history.replaceState({}, "", `/${selectedGame.id}`);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally run only on mount
   }, []);
@@ -372,8 +445,8 @@ function App() {
       startNewThread();
     };
 
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, [startNewThread]);
 
   const handleScroll = useCallback((scrollTop: number) => {
@@ -384,7 +457,7 @@ function App() {
     setLastPlayedGame(game.id);
     setSelectedGame(game);
     // Update URL to match selected game
-    window.history.pushState({}, '', `/${game.id}`);
+    window.history.pushState({}, "", `/${game.id}`);
   }, []);
 
   const handleChangeGame = useCallback(() => {
@@ -392,18 +465,18 @@ function App() {
     setSelectedGame(null);
     startNewThread();
     // Update URL back to root
-    window.history.pushState({}, '', '/');
+    window.history.pushState({}, "", "/");
   }, [startNewThread]);
 
   const handleNewGame = useCallback(() => {
-    if (confirm('Start a new game? Your progress will be lost.')) {
+    if (confirm("Start a new game? Your progress will be lost.")) {
       clearGameSave();
       resetGame();
       startNewThread();
       // If multiple games, go back to selector
       if (games.length > 1) {
         setSelectedGame(null);
-        window.history.pushState({}, '', '/');
+        window.history.pushState({}, "", "/");
       }
       // Otherwise stay on current game with fresh thread
     }
@@ -411,20 +484,32 @@ function App() {
 
   return (
     <div className="app">
-      <header className={headerCollapsed ? 'collapsed' : ''}>
+      <header className={headerCollapsed ? "collapsed" : ""}>
         <h1>
-          <a href="/" onClick={(e) => { e.preventDefault(); handleChangeGame(); }}>
+          <a
+            href="/"
+            onClick={(e) => {
+              e.preventDefault();
+              handleChangeGame();
+            }}
+          >
             Infocom Chat
           </a>
         </h1>
-        <p>{selectedGame ? selectedGame.name : 'Play text adventures with natural language'}</p>
+        <p>
+          {selectedGame
+            ? selectedGame.name
+            : "Play text adventures with natural language"}
+        </p>
         <div className="header-buttons">
           {selectedGame && (
             <>
               <button
-                className={`toggle-button ${showCommands ? 'active' : ''}`}
+                className={`toggle-button ${showCommands ? "active" : ""}`}
                 onClick={() => setShowCommands(!showCommands)}
-                title={showCommands ? 'Hide game commands' : 'Show game commands'}
+                title={
+                  showCommands ? "Hide game commands" : "Show game commands"
+                }
               >
                 <span className="toggle-icon">&gt;_</span>
               </button>
@@ -444,33 +529,54 @@ function App() {
       </header>
       <main>
         {selectedGame ? (
-          <GameLoader game={selectedGame} onScroll={handleScroll} onChangeGame={handleChangeGame} showCommands={showCommands} />
+          <GameLoader
+            game={selectedGame}
+            onScroll={handleScroll}
+            onChangeGame={handleChangeGame}
+            showCommands={showCommands}
+          />
         ) : (
           <GameSelector onSelectGame={handleSelectGame} />
         )}
       </main>
       <footer>
-        Built with ❤️ with <a href="https://tambo.co" target="_blank" rel="noopener noreferrer">Tambo</a> | <a href="https://github.com/tambo-ai/demo-infocom-chat" target="_blank" rel="noopener noreferrer">GitHub</a> | <a href="https://news.ycombinator.com/item?id=46786618" target="_blank" rel="noopener noreferrer">Join the discussion on HN</a>
+        Built with ❤️ with{" "}
+        <a href="https://tambo.co" target="_blank" rel="noopener noreferrer">
+          Tambo
+        </a>{" "}
+        |{" "}
+        <a
+          href="https://github.com/tambo-ai/demo-infocom-chat"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          GitHub
+        </a>{" "}
+        |{" "}
+        <a
+          href="https://news.ycombinator.com/item?id=46786618"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Join the discussion on HN
+        </a>
       </footer>
       {showInfo && <InfoModal onClose={() => setShowInfo(false)} />}
     </div>
   );
 }
 
-const initialMessages = [
+const initialMessages: InitialInputMessage[] = [
   {
-    id: 'system-message',
-    role: 'system' as const,
-    content: [{ type: 'text' as const, text: systemPrompt }],
-    createdAt: new Date().toISOString(),
-    componentState: {},
+    role: "system",
+    content: [{ type: "text", text: systemPrompt }],
   },
 ];
 
 function AppWithProviders() {
   const apiKey = import.meta.env.VITE_TAMBO_API_KEY;
   const [contextKey] = useState(() => {
-    const storageKey = 'infocom-chat-user-id';
+    const storageKey = "infocom-chat-user-id";
     let userId = localStorage.getItem(storageKey);
     if (!userId) {
       userId = crypto.randomUUID();
@@ -490,7 +596,12 @@ function AppWithProviders() {
   }
 
   return (
-    <TamboProvider apiKey={apiKey} tools={tools} initialMessages={initialMessages} contextKey={contextKey}>
+    <TamboProvider
+      apiKey={apiKey}
+      tools={tools}
+      initialMessages={initialMessages}
+      userKey={contextKey}
+    >
       <App />
     </TamboProvider>
   );
