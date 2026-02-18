@@ -70,8 +70,10 @@ function TipsBanner({ collapsed }: { collapsed: boolean }) {
   );
 }
 
-// Extract sendGameCommand calls from message content blocks
-function extractGameCommand(message: TamboThreadMessage): string | null {
+// Find the last sendGameCommand tool_use in a message's content blocks
+function getGameCommandFromMessage(
+  message: TamboThreadMessage,
+): string | null {
   for (const block of message.content) {
     if (
       block.type === "tool_use" &&
@@ -82,6 +84,30 @@ function extractGameCommand(message: TamboThreadMessage): string | null {
     ) {
       return String(block.input.command);
     }
+  }
+  return null;
+}
+
+// Find the game command associated with a text-bearing assistant message.
+// In v1, tool_use blocks may be in a preceding assistant message, so we
+// search backwards through all messages to find the nearest one.
+function findGameCommand(
+  allMessages: TamboThreadMessage[],
+  messageId: string,
+): string | null {
+  const idx = allMessages.findIndex((m) => m.id === messageId);
+  if (idx < 0) return null;
+
+  // Check the message itself first
+  const direct = getGameCommandFromMessage(allMessages[idx]);
+  if (direct) return direct;
+
+  // Walk backwards to find a preceding assistant message with a tool_use block
+  for (let i = idx - 1; i >= 0; i--) {
+    const m = allMessages[i];
+    if (m.role !== "assistant") break;
+    const cmd = getGameCommandFromMessage(m);
+    if (cmd) return cmd;
   }
   return null;
 }
@@ -148,7 +174,9 @@ function ChatInterface({
           )
           .map((message) => {
             const command =
-              message.role === "assistant" ? extractGameCommand(message) : null;
+              message.role === "assistant"
+                ? findGameCommand(messages, message.id)
+                : null;
 
             return (
               <div key={message.id} className="message-group">
