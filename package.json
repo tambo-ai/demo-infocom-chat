@@ -13,8 +13,8 @@
   "dependencies": {
     "@tambo-ai/react": "^1.0.2",
     "jszm": "github:DLehenbauer/jszm",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
     "zod": "^3.24.0"
   },
   "devDependencies": {
@@ -28,6 +28,6 @@
     "globals": "^17.6.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.59.2",
-    "vite": "^8.0.10"
+    "vite": "^8.0.12"
   }
 }
