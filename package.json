@@ -11,7 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@tambo-ai/react": "^1.0.2",
+    "@tambo-ai/react": "^1.2.6",
     "jszm": "github:DLehenbauer/jszm",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
